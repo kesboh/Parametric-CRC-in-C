@@ -11,5 +11,5 @@ Something that came about after being somewhat anoyed at the various CRC "CCITT"
 * Code-size depends on set parameters; no unnecessary code is generated!
 
 # Credit
- "CRC series" found at <https://barrgroup.com/>. Good starting point and general intro.
- For all your bit-twiddling needs <https://graphics.stanford.edu/~seander/bithacks.html>
+"CRC series" found at <https://barrgroup.com/>. Good starting point and general intro.
+For all your bit-twiddling needs <https://graphics.stanford.edu/~seander/bithacks.html>
