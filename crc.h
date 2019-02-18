@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-
 //If 1, then a table is used, speeding up computation but requiring sizeof(crc_t)*256 bytes of additional memory
 #define CRC_USE_TABLE 0
 
