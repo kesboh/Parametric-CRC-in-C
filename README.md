@@ -1,5 +1,5 @@
 # Parametric CRC in C
-Something that came about after being somewhat anoyed at the various CRC "CCITT" implementations and otherwise generally hard-coded ("not the one I want") variants that are out there. This is a fully parametric implementation that allows any type of CRC to be produced, while generating no unnecessary code.
+Something that came about after being somewhat anoyed at the various CRC "CCITT" implementations and otherwise generally hard-coded ("not the one I want") variants that are out there. This is a fully parametric implementation that allows any type of CRC to be produced, while generating only the required code.
 
 # Features
 * Variable length (8-, 16-, 32- and 64 bit)
