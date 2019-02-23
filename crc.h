@@ -6,10 +6,10 @@
 //If 1, then a table is used, speeding up computation but requiring sizeof(crc_t)*256 bytes of additional memory
 #define CRC_USE_TABLE 0
 
-//If 1, a function crc_init_table(void) is made available that populates the CRC table
-#define CRC_USE_INIT_TABLE_FUNC 0
+//If 1, the user provides a table by filling the approrpiately sized array crc_table[256]
+#define CRC_USER_PROVIDES_TABLE 0
 
-//If 1, a check is performed in the CRC calculation function verifying that the table is initialized.
+//If 1, the CRC is verified as initialized when used. If 0, user should call crc_init_table(void) before use
 #define CRC_CHECK_TABLE_INIT 0
 
 //The width of the calculated CRC. 1, 2, 4, 8, etc
@@ -31,6 +31,18 @@
 #define CRC_REFLECT_OUTPUT 1
 
 
+#if CRC_USE_TABLE == 1 && CRC_USER_PROVIDES_TABLE == 1
+#if CRC_WIDTH_BYTES == 1
+extern const uint8_t crc_table[256];
+#elif CRC_WIDTH_BYTES == 2
+extern const uint16_t crc_table[256];
+#elif CRC_WIDTH_BYTES == 4
+extern const uint32_t crc_table[256];
+#elif CRC_WIDTH_BYTES == 8
+extern const uint64_t crc_table[256];
+#endif //CRC_WIDTH_BYTES
+#endif
+
 
 //Make available the apropriate function
 #if CRC_WIDTH_BYTES == 1
@@ -43,8 +55,10 @@ uint32_t crc32(const uint8_t *data, uint32_t len);
 uint64_t crc64(const uint8_t *data, uint32_t len);
 #endif //CRC_WIDTH_BYTES
 
-#if (CRC_USE_TABLE == 1 && CRC_USE_INIT_TABLE_FUNC == 1)
+
+#if (CRC_USE_TABLE == 1 && CRC_USER_PROVIDES_TABLE == 0)
 void crc_init_table(void);
 #endif //CRC_USE_TABLE == 1
+
 
 #endif //CRC_H

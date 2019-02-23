@@ -1,17 +1,10 @@
 #include <crc.h>
 
-//Check defines
+
 #if (CRC_WIDTH_BYTES != 1 && CRC_WIDTH_BYTES != 2 && CRC_WIDTH_BYTES != 4 && CRC_WIDTH_BYTES != 8)
 #error "CRC_WIDTH_BYTES must be set to either 1, 2, 4 or 8"
 #endif
 
-#if (CRC_USE_INIT_TABLE_FUNC == 1 && CRC_USE_TABLE == 0)
-#warning "No use for crc_init_table(void) function when CRC not table-driven"
-#endif
-
-#if (CRC_USE_INIT_TABLE_FUNC == 0 && CRC_CHECK_TABLE_INIT == 1)
-#error "Can't call crc_init_table(void) when CRC_USE_INIT_TABLE_FUNC == 0"
-#endif
 
 #if CRC_WIDTH_BYTES == 1
 typedef uint8_t crc_t;
@@ -32,15 +25,17 @@ typedef uint64_t crc_t;
  * 
  * @return The calculated CRC
  * 
- * @note Use the wrapper functions defined below this prototype
+ * @note Use the appropriate wrapper function defined elsewhere in this file
  */
-crc_t __calc_crc(const uint8_t *data, uint32_t len);
+static crc_t __calc_crc(const uint8_t *data, uint32_t len);
 
 
 #define CRC_MSB (1 << ((CRC_WIDTH_BYTES*8)-1))
 
 #if CRC_USE_TABLE == 1
+#if CRC_USER_PROVIDES_TABLE == 0
 static crc_t crc_table[256];
+#endif //CRC_USER_PROVIDES_TABLE == 0
 #if CRC_CHECK_TABLE_INIT == 1
 static uint8_t table_is_init = 0;
 #endif //CRC_CHECK_TABLE_INIT == 1
@@ -61,8 +56,10 @@ inline static crc_t reflect_crc(uint64_t word, uint32_t num_bytes);
  * @param d_len Length of data pointed to by *data
  * 
  * @return The calculated CRC
+ * 
+ * @note Use the appropriate wrapper functions defined elsewhere in this file
  */
-crc_t __calc_crc(const uint8_t *data, uint32_t len)
+static crc_t __calc_crc(const uint8_t *data, uint32_t len)
 {
     crc_t crc = CRC_INIT_VAL;	
 
@@ -109,7 +106,7 @@ crc_t __calc_crc(const uint8_t *data, uint32_t len)
 
 #if CRC_REFLECT_INPUT == 1
 /**
- * @brief See https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith32Bits
+ * @brief Reflects the bits of a byte and returns it
  * 
  * @param val The byte which shall have its bits reflected
  * 
@@ -148,7 +145,7 @@ inline static crc_t reflect_crc(uint64_t word, uint32_t num_bytes)
 #endif
 
 
-#if CRC_USE_TABLE == 1
+#if (CRC_USE_TABLE == 1 && CRC_USER_PROVIDES_TABLE == 0)
 void crc_init_table(void)
 {
     crc_t rem;
