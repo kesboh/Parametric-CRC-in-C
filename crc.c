@@ -18,7 +18,7 @@ typedef uint64_t crc_t;
 
 
 /**
- * @brief Parameterized CRC implementation 
+ * Parameterized CRC implementation 
  * 
  * @param *data Pointer to the data for which to calculate the CRC
  * @param d_len Length of data pointed to by *data
@@ -32,13 +32,8 @@ static crc_t __calc_crc(const uint8_t *data, uint32_t len);
 
 #define CRC_MSB (1 << ((CRC_WIDTH_BYTES*8)-1))
 
-#if CRC_USE_TABLE == 1
-#if CRC_USER_PROVIDES_TABLE == 0
+#if CRC_USE_TABLE == 1 && CRC_USER_PROVIDES_TABLE == 0
 static crc_t crc_table[256];
-#endif //CRC_USER_PROVIDES_TABLE == 0
-#if CRC_CHECK_TABLE_INIT == 1
-static uint8_t table_is_init = 0;
-#endif //CRC_CHECK_TABLE_INIT == 1
 #endif //CRC_USE_TABLE == 1
 
 #if CRC_REFLECT_INPUT == 1
@@ -46,11 +41,11 @@ inline static uint8_t reflect_byte(uint8_t val);
 #endif
 
 #if CRC_REFLECT_OUTPUT == 1
-inline static crc_t reflect_crc(uint64_t word, uint32_t num_bytes);
+inline static crc_t reflect_crc(crc_t crc_in);
 #endif
 
 /**
- * @brief Parameterized CRC implementation 
+ * Parameterized CRC implementation 
  * 
  * @param *data Pointer to the data for which to calculate the CRC
  * @param d_len Length of data pointed to by *data
@@ -76,17 +71,12 @@ static crc_t __calc_crc(const uint8_t *data, uint32_t len)
             } else {
                 crc = (crc << 1);
             }
-        } //END OF NON-TABLE DRIVEN CALCULATION
+        } //End of non-table driven calculation
 
         #else //Use table
-        #if CRC_CHECK_TABLE_INIT == 1
-        if (table_is_init == 0) {
-            crc_init_table();
-        }
-        #endif //CRC_CHECK_TABLE_INIT == 1
         #if CRC_REFLECT_INPUT == 1
         uint8_t tmp = reflect_byte(data[curr_byte]) ^ (crc >> ((CRC_WIDTH_BYTES*8)-8));
-        #else //Don't reflect
+        #else
         uint8_t tmp = data[curr_byte] ^ (crc >> ((CRC_WIDTH_BYTES*8)-8));
         #endif //CRC_REFLECT_INPUT == 1
         crc = crc_table[tmp] ^ (crc << 8);
@@ -94,19 +84,18 @@ static crc_t __calc_crc(const uint8_t *data, uint32_t len)
 
     }
 
-    //Guessing most compilers optimize out the XOR if its constant 0x00
     #if CRC_REFLECT_OUTPUT == 1
-    return reflect_crc(crc ^ CRC_FINAL_XOR_VAL, sizeof(crc_t));
-    #else //Don't reflect
+    return reflect_crc(crc ^ CRC_FINAL_XOR_VAL);
+    #else
     return crc ^ CRC_FINAL_XOR_VAL;
     #endif
 
 }
 
 
-#if CRC_REFLECT_INPUT == 1
+#if (CRC_REFLECT_INPUT == 1) || (CRC_REFLECT_OUTPUT == 1)
 /**
- * @brief Reflects the bits of a byte and returns it
+ * Reflects the bits of a byte and returns it
  * 
  * @param val The byte which shall have its bits reflected
  * 
@@ -120,27 +109,22 @@ inline static uint8_t reflect_byte(uint8_t val)
 
 #if CRC_REFLECT_OUTPUT == 1
 /**
- * @brief Reflect bits in a word of size num_bytes
+ * Reflects the bits of a provided CRC and returns it
  * 
- * See post by Matt J / SirGuy:
- * https://stackoverflow.com/questions/746171/most-efficient-algorithm-for-bit-reversal-from-msb-lsb-to-lsb-msb-in-c
+ * @param crc_in The CRC to reflect
  * 
- * @param word The word to reflect
- * @param num_bytes sizeof(word)
- * 
- * @return Reflected word / CRC
- * 
- * @note: Could probably replace this with something more portable; BSWAP not available
- * on all archs
+ * @return The reflected CRC
  */
-inline static crc_t reflect_crc(uint64_t word, uint32_t num_bytes)
+inline static crc_t reflect_crc(crc_t crc_in)
 {
-    __asm__("BSWAP %0" : "=r"(word) : "0"(word));
-    word >>= ((sizeof(uint64_t) - num_bytes) * 8);
-    word = ((word & 0xaaaaaaaaaaaaaaaa) >> 1) | ((word & 0x5555555555555555) << 1);
-    word = ((word & 0xcccccccccccccccc) >> 2) | ((word & 0x3333333333333333) << 2);
-    word = ((word & 0xf0f0f0f0f0f0f0f0) >> 4) | ((word & 0x0f0f0f0f0f0f0f0f) << 4);
-    return word;
+    crc_t refl = 0;
+    uint8_t i;
+
+    for (i = 0; i < sizeof(crc_t); i++) {
+        refl |= reflect_byte((uint8_t)((crc_in >> i*8) & 0xFF)) << ((sizeof(crc_t) - 1 - i)*8);
+    }
+
+    return refl;
 }
 #endif
 
@@ -163,9 +147,6 @@ void crc_init_table(void)
 
         crc_table[divdn] = rem;
     }
-    #if CRC_CHECK_TABLE_INIT == 1
-    table_is_init = 1;
-    #endif
 }
 #endif
 
